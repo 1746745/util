@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    table {
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+  <table id="myTable">
+    <tr>
+      <th>Select</th>
+      <th>Item</th>
+      <th>Date</th>
+      <th>YouTube Link</th>
+    </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>1</td>
+      <td></td>
+      <td><a href="https://www.youtube.com/watch?v=VIDEO_ID_1">Link 1</a></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" checked></td>
+      <td>2</td>
+      <td>2023-05-31</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" checked></td>
+      <td>1</td>
+      <td>2023-05-30</td>
+      <td><a href="https://www.youtube.com/watch?v=VIDEO_ID_3">Link 3</a></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>3</td>
+      <td></td>
+      <td><a href="https://www.youtube.com/watch?v=VIDEO_ID_4">Link 4</a></td>
+    </tr>
+  </table>
+
+  <select id="filterLinkDropdown">
+    <option value="all">全て</option>
+    <option value="withLink">リンクあり</option>
+    <option value="withoutLink">リンクなし</option>
+  </select>
+
+  <select id="filterCheckboxDropdown">
+    <option value="all">全て</option>
+    <option value="checked">チェック</option>
+  </select>
+
+  <select id="filterDateDropdown">
+    <option value="all">全て</option>
+    <option value="hasDate">Dateあり</option>
+  </select>
+
+  <div id="percentage"></div>
+
+  <br>
+  <input type="text" id="newItemInput" placeholder="新しいアイテム">
+  <input type="text" id="newDateInput" placeholder="日付 (YYYY-MM-DD)">
+  <input type="text" id="newLinkInput" placeholder="YouTubeリンク">
+  <button id="addItemBtn">追加</button>
+
+  <script>
+    $(document).ready(function() {
+      $("#myTable input[type='checkbox']").change(function() {
+        var $row = $(this).closest("tr");
+        var $dateCell = $row.find("td:nth-child(3)");
+
+        if ($(this).is(":checked")) {
+          var currentDate = new Date().toISOString().split("T")[0];
+          $dateCell.text(currentDate);
+        } else {
+          $dateCell.text("");
+        }
+
+        filterTable();
+        calculatePercentage();
+      });
+
+      $("#myTable a").click(function(event) {
+        event.preventDefault();
+        var $checkbox = $(this).closest("tr").find("input[type='checkbox']");
+        $checkbox.prop("checked", true);
+        $checkbox.trigger("change");
+      });
+
+      $("#filterLinkDropdown, #filterCheckboxDropdown, #filterDateDropdown").change(filterTable);
+      $("#addItemBtn").click(addItem);
+      calculatePercentage();
+    });
+
+    function filterTable() {
+  var $rows = $("#myTable tr").slice(1); // ヘッダ行を除外
+  var linkFilterValue = $("#filterLinkDropdown").val();
+  var checkboxFilterValue = $("#filterCheckboxDropdown").val();
+  var dateFilterValue = $("#filterDateDropdown").val();
+
+  $rows.each(function() {
+    var $row = $(this);
+    var $checkbox = $row.find("input[type='checkbox']");
+    var $dateCell = $row.find("td:nth-child(3)");
+    var $linkCell = $row.find("td:nth-child(4)");
+
+    var hasLink = $linkCell.children("a").length > 0;
+    var isChecked = $checkbox.is(":checked");
+    var hasDate = $dateCell.text() !== "";
+
+    var isVisible = (
+      (linkFilterValue === "withLink" && hasLink) ||
+      (linkFilterValue === "withoutLink" && !hasLink) ||
+      linkFilterValue === "all"
+    ) && (
+      checkboxFilterValue === "all" ||
+      (checkboxFilterValue === "checked" && isChecked)
+    ) && (
+      (dateFilterValue === "hasDate" && hasDate ) ||
+      dateFilterValue === "all"
+    );
+
+    $row.toggle(isVisible);
+  });
+}
+
+
+    function calculatePercentage() {
+      var $checkboxes = $("#myTable input[type='checkbox']");
+      var totalRows = $checkboxes.length;
+      var checkedRows = $checkboxes.filter(":checked").length;
+      var percentage = (checkedRows / totalRows) * 100;
+
+      $("#percentage").text("チェック済みの割合: " + percentage.toFixed(2) + "%");
+    }
+
+    function addItem() {
+      var newItem = $("#newItemInput").val();
+      var newDate = $("#newDateInput").val();
+      var newLink = $("#newLinkInput").val();
+      if (newItem !== "") {
+        var newRow = $("<tr>");
+        var checkboxCell = $("<td>").append("<input type='checkbox'>");
+        var itemCell = $("<td>").text(newItem);
+        var dateCell = $("<td>").text(newDate);
+        var linkCell = $("<td>");
+        if (newLink !== "") {
+          linkCell.html("<a href='" + newLink + "'>" + newLink + "</a>");
+        }
+
+        newRow.append(checkboxCell, itemCell, dateCell, linkCell);
+        $("#myTable").append(newRow);
+
+        $("#newItemInput").val("");
+        $("#newDateInput").val("");
+        $("#newLinkInput").val("");
+        $("#myTable input[type='checkbox']").change(function() {
+          var $row = $(this).closest("tr");
+          var $dateCell = $row.find("td:nth-child(3)");
+
+          if ($(this).is(":checked")) {
+            var currentDate = new Date().toISOString().split("T")[0];
+            $dateCell.text(currentDate);
+          } else {
+            $dateCell.text("");
+          }
+
+          filterTable();
+          calculatePercentage();
+        });
+
+        $("#myTable a").click(function(event) {
+          event.preventDefault();
+          var $checkbox = $(this).closest("tr").find("input[type='checkbox']");
+          $checkbox.prop("checked", true);
+          $checkbox.trigger("change");
+        });
+
+        calculatePercentage();
+      }
+    }
+  </script>
+</body>
+</html>
